@@ -1,0 +1,45 @@
+#!/bin/bash
+#
+# $Id$
+#
+# Author: Janos Barbero <jbarbero@gmail.com>
+#
+# Single-file git handling
+# Based on: http://stackoverflow.com/questions/11128434/how-can-i-use-git-to-track-versions-of-a-single-file
+#
+
+function set_excludes() {
+    repo="$1"
+    file="$2"
+
+    {
+      echo "*"
+      echo "!$file"
+    } > "$repo/info/exclude"
+}
+
+usage="$0 FILENAME GIT-COMMAND [...]"
+
+if [[ $1 == -h || $1 == --help || $1 == "" ]]; then
+  echo "Usage: $usage" >&2
+  exit 1
+fi
+
+file=$1
+shift
+cmd="$@"
+
+repo=".git.$file"
+
+if [[ $1 == init ]]; then
+  set -x
+  git init --bare "$repo"
+  set +x
+  set_excludes "$repo" "$file"
+else
+  set_excludes "$repo" "$file"
+  set -x
+  git --bare --git-dir="$repo" --work-tree=. "$@"
+  set +x
+fi
+
